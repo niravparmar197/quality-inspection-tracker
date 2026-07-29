@@ -10,6 +10,7 @@ type ConfirmDialogProps = {
   title: string
   message: string
   confirmText?: string
+  confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmText = 'Confirm',
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -29,8 +31,10 @@ export function ConfirmDialog({
         <DialogContentText>{message}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="contained" onClick={onConfirm} autoFocus>
+        <Button onClick={onCancel} disabled={confirmDisabled}>
+          Cancel
+        </Button>
+        <Button variant="contained" onClick={onConfirm} disabled={confirmDisabled} autoFocus>
           {confirmText}
         </Button>
       </DialogActions>

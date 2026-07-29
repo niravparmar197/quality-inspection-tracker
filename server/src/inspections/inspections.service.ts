@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SapService } from '../sap/sap.service';
 import { Prisma } from '../../generated/prisma/client';
 import { InspectionStatus } from '../../generated/prisma/enums';
 import { CreateInspectionDto } from './dto/create-inspection.dto';
@@ -13,10 +14,13 @@ import { FilterInspectionDto } from './dto/filter-inspection.dto';
 
 @Injectable()
 export class InspectionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sapService: SapService,
+  ) {}
 
-  create(dto: CreateInspectionDto, createdById: string) {
-    return this.prisma.inspection.create({
+  async create(dto: CreateInspectionDto, createdById: string) {
+    const inspection = await this.prisma.inspection.create({
       data: {
         inspectionDate: new Date(dto.inspectionDate),
         machineId: dto.machineId,
@@ -26,6 +30,10 @@ export class InspectionsService {
         createdById,
       },
     });
+
+    void this.sapService.notifyInspection(inspection);
+
+    return inspection;
   }
 
   async findAll(filter: FilterInspectionDto) {
@@ -81,18 +89,27 @@ export class InspectionsService {
     return this.prisma.inspection.update({ where: { id }, data: dto });
   }
 
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.inspection.delete({ where: { id } });
+  }
+
   async resolve(id: string, dto: ResolveInspectionDto) {
     const inspection = await this.findOne(id);
     if (inspection.status === InspectionStatus.RESOLVED) {
       throw new ConflictException('Inspection is already resolved');
     }
 
-    return this.prisma.inspection.update({
+    const resolved = await this.prisma.inspection.update({
       where: { id },
       data: {
         status: InspectionStatus.RESOLVED,
         resolutionNote: dto.resolutionNote,
       },
     });
+
+    void this.sapService.notifyInspection(resolved);
+
+    return resolved;
   }
 }
