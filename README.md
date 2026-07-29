@@ -1,99 +1,58 @@
 # Quality Inspection Tracker
 
-A mobile-first web app for shop-floor supervisors to log, track, and resolve textile quality defects — replacing paper registers with a simple, fast tool usable on a phone.
+Mobile-first web app for shop-floor supervisors to log, track, and resolve textile quality defects — replacing paper registers.
 
 ## Tech Stack
 
-**Backend** — `server/`
-- NestJS 11
-- Prisma ORM 7 (SQLite, via the `better-sqlite3` driver adapter)
-- JWT authentication (`@nestjs/jwt`, `passport-jwt`, `bcrypt`)
-- Swagger / OpenAPI docs
-
-**Frontend** — `client/`
-- React 19 + Vite + TypeScript
-- Material UI (component library) + Tailwind CSS (utility styling, used for the badge/status colors)
-- React Router, React Hook Form, Axios
-- `localforage` for the offline queue
+- **Backend** (`server/`): NestJS 11, Prisma 7 + SQLite (`better-sqlite3` adapter), JWT auth (`@nestjs/jwt`, `passport-jwt`, `bcrypt`), Swagger
+- **Frontend** (`client/`): React 19 + Vite + TypeScript, Material UI + Tailwind CSS, React Router, React Hook Form, Axios, `localforage`
 
 ## Setup (under 5 minutes)
 
-### Option A — Docker Compose (recommended)
-
+**Docker (recommended):**
 ```bash
 docker compose up --build
 ```
+Frontend `localhost:5173` · Backend `localhost:3000` · Swagger `localhost:3000/api` · stop with `docker compose down`
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000
-- Swagger: http://localhost:3000/api
-
-Stop with `docker compose down`.
-
-### Option B — Local dev, no Docker
-
+**Local dev:**
 ```bash
-# Backend
-cd server
-npm install
-npx prisma generate
-npx prisma migrate dev
-npm run start:dev        # http://localhost:3000
-
-# Frontend (separate terminal)
-cd client
-npm install
-npm run dev               # http://localhost:5173
+cd server && npm install && npx prisma generate && npx prisma migrate dev && npm run start:dev
+cd client && npm install && npm run dev
 ```
 
-Backend config (`server/.env`):
-```
-DATABASE_URL=file:./dev.db
-JWT_SECRET=quality_tracker_secret
-JWT_EXPIRES_IN=1d
-PORT=3000
-```
+`server/.env`: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `PORT` · `client/.env`: `VITE_API_URL=http://localhost:3000`
 
-Frontend config (`client/.env`):
-```
-VITE_API_URL=http://localhost:3000
-```
-
-There's no seeded account — register your own via the app's **Register** page or `POST /auth/register`.
+No seeded account — register via the app's Register page or `POST /auth/register`.
 
 ## Architecture Decisions
 
-**NestJS + Prisma + SQLite for the backend.** NestJS's module/DI structure keeps auth, inspections, and dashboard concerns cleanly separated as the app grew, and Prisma's typed client removes a whole class of query bugs. SQLite meets the "no cloud database" requirement directly — no separate DB server to run, and the file is trivially backed up. Trade-off: SQLite doesn't handle concurrent writers well, which is fine for a single shop-floor tool but wouldn't scale to multiple plants writing simultaneously.
+**NestJS + Prisma + SQLite.** Modules keep auth/inspections/dashboard separated; Prisma's typed client avoids a class of query bugs. SQLite meets "no cloud database" with zero infra — trade-off is weak concurrent-write handling, fine for one shop floor.
 
-**JWT over sessions.** The frontend is a separate SPA calling a separate API (different ports/origins in dev), so a stateless bearer token avoids needing shared session storage or cookie/CORS complications. The token is stored in `localStorage` and attached via an Axios request interceptor; a response interceptor redirects to `/login` on 401.
+**JWT over sessions.** Separate SPA + API, so a stateless bearer token skips shared session storage. Stored in `localStorage`, attached via an Axios interceptor; 401 redirects to `/login`.
 
-**React + MUI + Tailwind, not a heavier framework.** MUI supplies accessible, pre-built components (dialogs, forms, tables) so the mobile-first UI didn't need to be hand-rolled; Tailwind's utility classes are used specifically for the severity/status badges, where the design's exact colors turned out to match Tailwind's default palette. Everything is client-side rendered — no SSR — since this is an internal tool behind auth, not something needing SEO.
+**MUI + Tailwind.** MUI gives accessible pre-built components; Tailwind covers severity/status badges (their exact colors match Tailwind's default palette). No SSR — internal tool behind auth, no SEO need.
 
-**Offline queue via `localforage`, not a full PWA/service worker.** The assignment's bonus asks for "inspections logged without connectivity sync when back online," not offline page loads. A `localforage`-backed queue plus `navigator.onLine`/`online` event listener covers that specific requirement with far less complexity than a service-worker-based PWA, and it's easy to verify by toggling DevTools' network throttling to "Offline."
+**`localforage` queue, not a PWA.** The bonus needs offline logging that syncs later, not offline page loads — a queue + `online` listener does that far more simply than a service worker.
 
-**SAP webhook direction.** `POST /api/sap-webhook` is the inbound endpoint SAP (or anything) calls to auto-create an inspection — see below for the payload shape. Separately, `POST /sap/inspection` is an outbound mock: whenever an inspection is created or resolved *in this app*, the backend fires a (non-blocking, failure-tolerant) notification to that endpoint, simulating pushing data back out to SAP. Both directions exist because the assignment brief and an earlier design note asked for slightly different things; keeping both was cheap and demonstrates the integration pattern in both directions.
+**SAP webhook, both directions.** `POST /api/sap-webhook` is inbound (SAP creates an inspection here); `POST /sap/inspection` is an outbound mock fired on create/resolve. Both were cheap to add and show the pattern each way.
 
-## API Design Notes
+## API Notes
 
-- Consistent JSON responses; validation errors return `400` with NestJS's standard `{ statusCode, message, error }` shape (`message` is an array for multi-field validation failures).
-- `404` for missing resources (e.g. `GET /inspections/:id`), `409` if you try to resolve an already-resolved inspection.
-- Pagination via `?page=&limit=`, filtering via `?severity=&status=&fromDate=&toDate=&search=`, sorting via `?sort=asc|desc` (by inspection date).
-- All `/inspections` and `/dashboard` routes require a `Bearer` JWT; `/auth/*` and the SAP endpoints are public.
+- `400` with `{ statusCode, message, error }` on validation errors; `404` on missing resources; `409` resolving an already-resolved inspection
+- Pagination: `?page=&limit=` · Filters: `?severity=&status=&fromDate=&toDate=&search=` · Sort: `?sort=asc|desc`
+- `/inspections` and `/dashboard` require a Bearer JWT; `/auth/*` and SAP endpoints are public
 
 ## Bonus Features
 
-- **Offline support** — creating an inspection while offline saves it to a local `localforage` queue instead of failing; a banner shows "🔴 Offline Mode"; on reconnect, the queue drains automatically and the Dashboard/Inspections views refresh without a manual reload.
-- **Mock SAP integration** — `POST /api/sap-webhook`. See payload shape below.
-- **Authentication** — JWT-based register/login, all inspection and dashboard routes protected.
+- **Offline support** — logging offline queues locally (`localforage`); "🔴 Offline Mode" banner; auto-syncs and refreshes views on reconnect
+- **Mock SAP integration** — see payload below
+- **JWT authentication** — register/login, all inspection/dashboard routes protected
 
 ### SAP Webhook Payload
 
 ```
 POST /api/sap-webhook
-Content-Type: application/json
-```
-
-```json
 {
   "inspectionDate": "2026-07-29",
   "machineId": "MC-101",
@@ -103,26 +62,22 @@ Content-Type: application/json
 }
 ```
 
-- `defectType` must be one of: `WEAVE_DEFECT`, `SHADE_VARIATION`, `HOLE_TEAR`, `COUNT_DEVIATION`, `OTHER`
-- `severity` must be one of: `CRITICAL`, `MAJOR`, `MINOR`
-- `remarks` is optional; all other fields are required
-- No authentication required (this endpoint is meant to be called by an external system, not a logged-in user)
-- The created inspection is attributed to an auto-provisioned system user (`sap-integration@system.local`) so it shows up in the same list as manually-logged inspections, with status `OPEN`
+`defectType`: `WEAVE_DEFECT` · `SHADE_VARIATION` · `HOLE_TEAR` · `COUNT_DEVIATION` · `OTHER`. `severity`: `CRITICAL` · `MAJOR` · `MINOR`. `remarks` optional, rest required. No auth — attributed to an auto-provisioned system user (`sap-integration@system.local`), status `OPEN`.
 
-## Assumptions Made
+## Assumptions
 
-- The assignment didn't specify the SAP webhook payload shape or auth requirements — I designed it to mirror the manual "create inspection" fields and left it unauthenticated, documented above.
-- "Machine/line ID" is stored as free text per the spec, not a separate managed list of machines.
-- "Sortable" list is satisfied with a single newest/oldest toggle on inspection date, not per-column sorting — the assignment didn't specify which columns need to be sortable.
-- Docker Hub images (`nirav197/quality-inspection-backend` / `-frontend`) — repos are created but not yet pushed; the compose setup builds from source instead, which already satisfies "runs locally in under 5 minutes."
+- SAP webhook payload/auth weren't specified — mirrored the manual create-inspection fields, left unauthenticated
+- Machine/line ID is free text, not a managed list
+- "Sortable" = newest/oldest toggle on date, not per-column (columns to sort weren't specified)
+- Docker Hub repos exist but images aren't pushed yet — compose builds from source, which already satisfies the 5-minute local run requirement
 
-## What I'd Do Differently With More Time
+## What I'd Do Differently
 
-- **Real automated tests.** Right now correctness was checked manually (curl + browser) as features were built; there's no Jest/e2e suite. This is the single biggest gap given the "no critical bugs" grading weight.
-- **Per-column table sorting** instead of a single date-sort toggle, and server-side sorting by severity/status.
-- **A seeded demo account** so a reviewer doesn't have to register before seeing data.
-- **Code-splitting the frontend bundle** — it's a single ~660KB chunk (mostly MUI); dynamic `import()` per route would help initial load on slow mobile connections, which matters given the mobile-first requirement.
-- **A shared component library page** or Storybook, now that the UI has enough recurring pieces (badges, dialogs, empty states) to justify one.
+- Real automated tests (currently manual verification only — biggest gap)
+- Per-column and server-side sorting (severity, status)
+- Seeded demo account
+- Code-split the frontend bundle (~660KB, mostly MUI) for faster mobile loads
+- A shared component/Storybook page for the recurring UI pieces
 
 ## Repository
 
@@ -130,4 +85,4 @@ https://github.com/niravparmar197/quality-inspection-tracker
 
 ## Screenshots
 
-_TODO: add screenshots of the login page, dashboard, and inspection management screen._
+_TODO: add screenshots of login, dashboard, and inspection management._
