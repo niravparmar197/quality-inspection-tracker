@@ -35,6 +35,7 @@ export class InspectionsService {
     const where: Prisma.InspectionWhereInput = {
       severity: filter.severity,
       status: filter.status,
+      machineId: filter.search ? { contains: filter.search } : undefined,
     };
 
     if (filter.fromDate || filter.toDate) {

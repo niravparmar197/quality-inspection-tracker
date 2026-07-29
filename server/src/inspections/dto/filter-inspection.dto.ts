@@ -6,11 +6,17 @@ import {
   IsIn,
   IsInt,
   IsOptional,
+  IsString,
   Min,
 } from 'class-validator';
 import { InspectionStatus, Severity } from '../../../generated/prisma/enums';
 
 export class FilterInspectionDto {
+  @ApiProperty({ required: false, example: 'MC-101' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiProperty({ enum: Severity, required: false })
   @IsOptional()
   @IsEnum(Severity)
