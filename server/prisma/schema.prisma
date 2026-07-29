@@ -1,0 +1,68 @@
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Severity {
+  CRITICAL
+  MAJOR
+  MINOR
+}
+
+enum InspectionStatus {
+  OPEN
+  RESOLVED
+}
+
+enum DefectType {
+  WEAVE_DEFECT
+  SHADE_VARIATION
+  HOLE_TEAR
+  COUNT_DEVIATION
+  OTHER
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  password     String
+
+  inspections  Inspection[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Inspection {
+
+  id String @id @default(cuid())
+
+  inspectionDate DateTime
+
+  machineId String
+
+  defectType DefectType
+
+  severity Severity
+
+  status InspectionStatus @default(OPEN)
+
+  remarks String?
+
+  resolutionNote String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  createdById String
+
+  createdBy User @relation(fields: [createdById], references: [id])
+}
