@@ -1,0 +1,13 @@
+node_modules
+dist
+generated
+.env
+.env.*
+.git
+.gitignore
+.agents
+.claude
+.windsurf
+skills-lock.json
+coverage
+*.md
