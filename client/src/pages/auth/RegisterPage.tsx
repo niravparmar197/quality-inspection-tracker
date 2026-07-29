@@ -12,6 +12,10 @@ import { useSnackbar } from '../../hooks/useSnackbar'
 import { usePageTitle } from '../../hooks/usePageTitle'
 import type { RegisterPayload } from '../../types/auth'
 
+const inputSx = {
+  '& .MuiOutlinedInput-root': { borderRadius: '10px' },
+}
+
 export default function RegisterPage() {
   usePageTitle('Register')
   const { showSnackbar } = useSnackbar()
@@ -40,22 +44,40 @@ export default function RegisterPage() {
         justifyContent: 'center',
         minHeight: '100vh',
         bgcolor: 'background.default',
+        p: 3,
       }}
     >
-      <Paper
-        sx={{ p: { xs: 3, sm: 4 }, width: '100%', maxWidth: 360, mx: 2 }}
-        elevation={0}
-        variant="outlined"
-      >
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-          Create an Account
+      <Paper elevation={0} sx={{ p: { xs: 3, sm: 4.5 }, width: '100%', maxWidth: 400, borderRadius: '16px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 3.5, justifyContent: 'center' }}>
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: '10px',
+              bgcolor: 'primary.main',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 13,
+            }}
+          >
+            QI
+          </Box>
+          <Typography sx={{ fontWeight: 700, fontSize: 17 }}>Quality Inspection Tracker</Typography>
+        </Box>
+
+        <Typography sx={{ fontSize: 22, fontWeight: 700, mb: 0.5 }}>Create account</Typography>
+        <Typography sx={{ fontSize: 14, color: 'text.secondary', mb: 3 }}>
+          Set up access for your inspection team.
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
           <TextField
-            label="Name"
+            label="Full name"
             fullWidth
-            margin="normal"
+            sx={inputSx}
             error={!!errors.name}
             helperText={errors.name?.message}
             {...register('name', { required: 'Name is required' })}
@@ -63,7 +85,7 @@ export default function RegisterPage() {
           <TextField
             label="Email"
             fullWidth
-            margin="normal"
+            sx={inputSx}
             error={!!errors.email}
             helperText={errors.email?.message}
             {...register('email', { required: 'Email is required' })}
@@ -72,7 +94,7 @@ export default function RegisterPage() {
             label="Password"
             type="password"
             fullWidth
-            margin="normal"
+            sx={inputSx}
             error={!!errors.password}
             helperText={errors.password?.message}
             {...register('password', {
@@ -80,21 +102,15 @@ export default function RegisterPage() {
               minLength: { value: 6, message: 'Minimum 6 characters' },
             })}
           />
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={isSubmitting}
-            sx={{ mt: 3 }}
-          >
-            Register
+          <Button type="submit" variant="contained" fullWidth disabled={isSubmitting} sx={{ mt: 0.5, py: 1.4 }}>
+            Create account
           </Button>
         </Box>
 
-        <Typography variant="body2" align="center" sx={{ mt: 3 }}>
+        <Typography align="center" sx={{ mt: 2.75, fontSize: 13.5, color: 'text.secondary' }}>
           Already have an account?{' '}
-          <Link component={RouterLink} to="/login">
-            Login
+          <Link component={RouterLink} to="/login" sx={{ fontWeight: 600 }}>
+            Sign in
           </Link>
         </Typography>
       </Paper>

@@ -35,4 +35,8 @@ export const inspectionsService = {
     const { data } = await api.patch<Inspection>(`/inspections/${id}/resolve`, payload)
     return data
   },
+
+  async remove(id: string) {
+    await api.delete(`/inspections/${id}`)
+  },
 }

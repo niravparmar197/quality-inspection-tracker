@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { InspectionsModule } from './inspections/inspections.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SapModule } from './sap/sap.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     UsersModule,
     InspectionsModule,
     DashboardModule,
+    SapModule,
   ],
   controllers: [AppController],
   providers: [AppService],

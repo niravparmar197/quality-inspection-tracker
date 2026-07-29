@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -54,5 +55,11 @@ export class InspectionsController {
   @ApiResponse({ status: 409, description: 'Inspection is already resolved' })
   resolve(@Param('id') id: string, @Body() dto: ResolveInspectionDto) {
     return this.inspectionsService.resolve(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiResponse({ status: 404, description: 'Inspection not found' })
+  remove(@Param('id') id: string) {
+    return this.inspectionsService.remove(id);
   }
 }
