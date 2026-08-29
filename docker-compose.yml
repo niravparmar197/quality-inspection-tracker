@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -7,8 +5,12 @@ services:
     container_name: quality-inspection-backend
     ports:
       - "3000:3000"
-    env_file:
-      - ./server/.env
+    environment:
+      DATABASE_URL: file:./dev.db
+      JWT_SECRET: quality_tracker_secret
+      JWT_EXPIRES_IN: 1d
+      PORT: 3000
+      SAP_WEBHOOK_URL: http://localhost:3000/sap/inspection
     restart: unless-stopped
 
   frontend:

@@ -97,6 +97,38 @@ export default function DashboardPage() {
         ))}
       </Box>
 
+      <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 1.75 }}>Open vs Resolved by Severity</Typography>
+
+      <Paper elevation={0} sx={{ borderRadius: '14px', overflow: 'hidden', mb: 4 }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: '#f8fafc' }}>
+              {['Severity', 'Open', 'Resolved', 'Total'].map((head) => (
+                <TableCell
+                  key={head}
+                  align={head === 'Severity' ? 'left' : 'center'}
+                  sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4 }}
+                >
+                  {head}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {summary.bySeverity.map((row) => (
+              <TableRow key={row.severity}>
+                <TableCell>
+                  <StatusBadge label={row.severity} className={severityColor[row.severity]} />
+                </TableCell>
+                <TableCell align="center" sx={{ fontSize: 13.5 }}>{row.open}</TableCell>
+                <TableCell align="center" sx={{ fontSize: 13.5 }}>{row.resolved}</TableCell>
+                <TableCell align="center" sx={{ fontSize: 13.5, fontWeight: 700 }}>{row.total}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
+
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.75 }}>
         <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Recent Inspections</Typography>
         <Link component={RouterLink} to="/inspections" sx={{ fontSize: 13.5, fontWeight: 600 }}>

@@ -10,6 +10,8 @@ Mobile-first defect tracker for shop-floor supervisors — replaces paper regist
 docker compose up --build
 ```
 
+That's it — `docker-compose.yml` sets the backend env vars directly, so no `.env` file is needed for the Docker path.
+
 | | URL |
 |---|---|
 | 🖥️ **Frontend** | **http://localhost:5173** |
@@ -17,6 +19,8 @@ docker compose up --build
 | 📘 **Swagger Docs** | **http://localhost:3000/api** |
 
 No seeded user — register via the app or `POST /auth/register`.
+
+**Running without Docker:** copy `server/.env.example` → `server/.env` and `client/.env.example` → `client/.env`, then `npm install && npm run start:dev` in `server/` (after `npx prisma migrate deploy`) and `npm install && npm run dev` in `client/`.
 
 ## Decisions
 
