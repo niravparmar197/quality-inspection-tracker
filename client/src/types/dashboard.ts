@@ -6,12 +6,20 @@ export type ApiEnvelope<T> = {
   data: T
 }
 
+export type SeverityBreakdown = {
+  severity: Severity
+  open: number
+  resolved: number
+  total: number
+}
+
 export type DashboardSummary = {
   open: number
   resolved: number
   critical: number
   major: number
   minor: number
+  bySeverity: SeverityBreakdown[]
 }
 
 export type RecentInspection = {
